@@ -162,7 +162,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - name: Terraform Bootstrap
         id: bootstrap
-        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@feat/add-reusable-workflows-for-tf-module-validation
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
         with:
           actions-id: ${{ secrets.actions-id }}
           actions-secret: ${{ secrets.actions-secret }}
@@ -194,7 +194,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - name: Terraform Bootstrap
         id: bootstrap
-        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@feat/add-reusable-workflows-for-tf-module-validation
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
         with:
           actions-id: ${{ secrets.actions-id }}
           actions-secret: ${{ secrets.actions-secret }}
@@ -225,7 +225,7 @@ jobs:
           node-version: 16
       - name: Terraform Bootstrap
         id: bootstrap
-        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@feat/add-reusable-workflows-for-tf-module-validation
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
         with:
           actions-id: ${{ secrets.actions-id }}
           actions-secret: ${{ secrets.actions-secret }}
@@ -253,7 +253,7 @@ jobs:
           node-version: 16
       - name: Terraform Bootstrap
         id: bootstrap
-        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@feat/add-reusable-workflows-for-tf-module-validation
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
         with:
           actions-id: ${{ secrets.actions-id }}
           actions-secret: ${{ secrets.actions-secret }}
@@ -286,7 +286,7 @@ jobs:
           fi
       - name: Terraform Bootstrap
         id: bootstrap
-        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@feat/add-reusable-workflows-for-tf-module-validation
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
         with:
           actions-id: ${{ secrets.actions-id }}
           actions-secret: ${{ secrets.actions-secret }}
@@ -323,7 +323,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - name: Terraform Bootstrap
         id: bootstrap
-        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@feat/add-reusable-workflows-for-tf-module-validation
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
         with:
           actions-id: ${{ secrets.actions-id }}
           actions-secret: ${{ secrets.actions-secret }}
@@ -364,7 +364,7 @@ jobs:
           node-version: 16
       - name: Terraform Bootstrap
         id: bootstrap
-        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@feat/add-reusable-workflows-for-tf-module-validation
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
         with:
           actions-id: ${{ secrets.actions-id }}
           actions-secret: ${{ secrets.actions-secret }}
