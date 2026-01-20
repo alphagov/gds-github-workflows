@@ -1,0 +1,526 @@
+---
+name: Terraform Module Validation
+on:
+  workflow_call:
+    secrets:
+      infracost-api-key:
+        description: "The API key for infracost"
+        required: false
+      actions-secret:
+        description: "The GitHub App secret for the Actions App"
+        required: false
+      actions-id:
+        description: "The GitHub App ID for the Actions App"
+        required: false
+
+    inputs:
+      cicd-repository:
+        default: "alphagov/gds-github-workflows"
+        description: "The repository to pull the CI/CD workflows from"
+        required: false
+        type: string
+
+      cicd-branch:
+        default: "main"
+        description: "The branch to pull the CI/CD workflows from"
+        required: false
+        type: string
+
+      enable-infracost:
+        default: false
+        description: "Whether to run infracost on the Terraform Plan (secrets.infracost-api-key must be set if enabled)"
+        required: false
+        type: boolean
+
+      enable-commitlint:
+        default: true
+        description: "Whether to run commitlint on the commit message"
+        required: false
+        type: boolean
+
+      enable-checkov:
+        default: true
+        description: "Whether to run checkov security scanning"
+        required: false
+        type: boolean
+
+      enable-private-access:
+        description: Optional flag to state if terraform requires pulling private modules
+        required: false
+        default: false
+        type: boolean
+
+      enable-terraform-tests:
+        default: true
+        description: "Whether to run terraform test"
+        required: false
+        type: boolean
+
+      organization-name:
+        default: "gds"
+        description: "The name of the GitHub organization"
+        required: false
+        type: string
+
+      terraform-dir:
+        default: "."
+        description: "The directory to validate"
+        required: false
+        type: string
+
+      terraform-init-extra-args:
+        default: ""
+        description: "Extra arguments to pass to terraform init"
+        required: false
+        type: string
+
+      terraform-tests-dir:
+        default: "."
+        description: "The terraform test directory"
+        required: false
+        type: string
+
+      terraform-version:
+        default: "1.11.2"
+        description: "The version of terraform to use"
+        required: false
+        type: string
+
+      trivy-version:
+        default: "v0.56.2"
+        description: "The version of trivy to use"
+        required: false
+        type: string
+
+      working-directory:
+        default: "."
+        description: "Working directory"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  commitlint:
+    name: "Commitlint"
+    if: github.event_name == 'pull_request' && inputs.enable-commitlint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    outputs:
+      result: ${{ steps.commitlint.outcome }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          fetch-depth: 0
+      - name: Setup node
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+        with:
+          node-version: 16
+      - name: Install Dependencies
+        run: npm install @commitlint/config-conventional @commitlint/cli
+      - name: Retrieve Commit Configuration
+        run: |
+          wget https://raw.githubusercontent.com/${{ inputs.cicd-repository }}/${{ inputs.cicd-branch }}/config/commitlint.config.js -O commitlint.config.js
+      - name: Run Commitlint
+        id: commitlint
+        run: npx commitlint --config commitlint.config.js --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+
+  terraform-format:
+    name: "Terraform Format"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    outputs:
+      result: ${{ steps.format.outcome }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: ${{ inputs.terraform-version }}
+      - name: Terraform Format
+        id: format
+        run: terraform -chdir=${{ inputs.terraform-dir }} fmt -check -recursive
+
+  terraform-lint:
+    name: "Terraform Lint"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    outputs:
+      result: ${{ steps.lint.outcome }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Terraform Bootstrap
+        id: bootstrap
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
+        with:
+          actions-id: ${{ secrets.actions-id }}
+          actions-secret: ${{ secrets.actions-secret }}
+          enable-private-access: ${{ inputs.enable-private-access }}
+          organization-name: ${{ inputs.organization-name }}
+          terraform-dir: ${{ inputs.terraform-dir }}
+          terraform-init-extra-args: ${{ inputs.terraform-init-extra-args }}
+          terraform-version: ${{ inputs.terraform-version }}
+          working-directory: ${{ inputs.working-directory }}
+      - name: Setup Linter
+        uses: terraform-linters/setup-tflint@4cb9feea73331a35b422df102992a03a44a3bb33 # v6
+      - name: Linter Initialize
+        run: tflint --init
+      - name: Linting Code
+        id: lint
+        run: tflint -f compact
+
+  terraform-tests:
+    name: "Terraform Unit Tests"
+    runs-on: ubuntu-latest
+    if: inputs.enable-terraform-tests
+    defaults:
+      run:
+        working-directory: .
+    outputs:
+      result: ${{ steps.tests.outcome }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Terraform Bootstrap
+        id: bootstrap
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
+        with:
+          actions-id: ${{ secrets.actions-id }}
+          actions-secret: ${{ secrets.actions-secret }}
+          enable-private-access: ${{ inputs.enable-private-access }}
+          organization-name: ${{ inputs.organization-name }}
+          terraform-dir: .
+          terraform-init-extra-args: ${{ inputs.terraform-init-extra-args }}
+          terraform-version: ${{ inputs.terraform-version }}
+          working-directory: .
+      - name: Run Tests
+        id: tests
+        run: terraform -chdir=${{ inputs.terraform-tests-dir }} test
+
+  terraform-init:
+    name: "Terraform Init"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    outputs:
+      result: ${{ steps.bootstrap.outputs.outcome-init }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Setup node
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+        with:
+          node-version: 16
+      - name: Terraform Bootstrap
+        id: bootstrap
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
+        with:
+          actions-id: ${{ secrets.actions-id }}
+          actions-secret: ${{ secrets.actions-secret }}
+          enable-private-access: ${{ inputs.enable-private-access }}
+          organization-name: ${{ inputs.organization-name }}
+          terraform-dir: ${{ inputs.terraform-dir }}
+          terraform-init-extra-args: ${{ inputs.terraform-init-extra-args }}
+          terraform-version: ${{ inputs.terraform-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+  terraform-validate:
+    name: "Terraform Validate"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    outputs:
+      result: ${{ steps.validate.outcome }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Setup node
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+        with:
+          node-version: 16
+      - name: Terraform Bootstrap
+        id: bootstrap
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
+        with:
+          actions-id: ${{ secrets.actions-id }}
+          actions-secret: ${{ secrets.actions-secret }}
+          enable-private-access: ${{ inputs.enable-private-access }}
+          organization-name: ${{ inputs.organization-name }}
+          terraform-dir: ${{ inputs.terraform-dir }}
+          terraform-init-extra-args: ${{ inputs.terraform-init-extra-args }}
+          terraform-version: ${{ inputs.terraform-version }}
+          working-directory: ${{ inputs.working-directory }}
+      - name: Terraform Validate
+        id: validate
+        run: terraform -chdir=${{ inputs.terraform-dir }} validate -no-color
+
+  terraform-security:
+    name: "Static Security Analysis"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    outputs:
+      result: ${{ steps.security.outcome }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Check If Trivy Ignore File Exists
+        id: security-exceptions
+        run: |
+          if [ -e ".trivyignore" ]; then
+            echo filename=".trivyignore" >> "${GITHUB_OUTPUT}"
+          fi
+      - name: Terraform Bootstrap
+        id: bootstrap
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
+        with:
+          actions-id: ${{ secrets.actions-id }}
+          actions-secret: ${{ secrets.actions-secret }}
+          enable-private-access: ${{ inputs.enable-private-access }}
+          organization-name: ${{ inputs.organization-name }}
+          terraform-dir: ${{ inputs.terraform-dir }}
+          terraform-init-extra-args: ${{ inputs.terraform-init-extra-args }}
+          terraform-version: ${{ inputs.terraform-version }}
+          working-directory: ${{ inputs.working-directory }}
+      - name: Run Trivy vulnerability
+        id: security
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
+        with:
+          exit-code: "1"
+          format: "table"
+          ignore-unfixed: true
+          scan-type: "config"
+          scan-ref: ${{ inputs.working-directory }}
+          severity: "CRITICAL,HIGH"
+          trivyignores: ${{ steps.security-exceptions.outputs.filename }}
+          version: ${{ inputs.trivy-version }}
+
+  terraform-checkov:
+    name: "Static Security Analysis - Checkov"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    if: inputs.enable-checkov
+    outputs:
+      result: ${{ steps.security.outcome }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Terraform Bootstrap
+        id: bootstrap
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
+        with:
+          actions-id: ${{ secrets.actions-id }}
+          actions-secret: ${{ secrets.actions-secret }}
+          enable-private-access: ${{ inputs.enable-private-access }}
+          organization-name: ${{ inputs.organization-name }}
+          terraform-dir: ${{ inputs.terraform-dir }}
+          terraform-init-extra-args: ${{ inputs.terraform-init-extra-args }}
+          terraform-version: ${{ inputs.terraform-version }}
+          working-directory: ${{ inputs.working-directory }}
+      - name: Ensure Checkov Configuration
+        run: |
+          [ -f ".checkov.yml" ] || echo "{}" > .checkov.yml
+      - name: Run Checkov
+        id: security
+        uses: bridgecrewio/checkov-action@02a4c5d6a02367e5ea493c34c26b094302fd3f61 # v12
+        with:
+          config_file: ${{ inputs.working-directory }}/.checkov.yml
+          directory: ${{ inputs.working-directory }}
+          download_external_modules: true
+          framework: terraform
+          output_format: cli,sarif
+          soft_fail: true
+
+  terraform-validate-examples:
+    name: "Terraform Validate Examples"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    outputs:
+      result: ${{ steps.validate-examples.outcome }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Setup node
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+        with:
+          node-version: 16
+      - name: Terraform Bootstrap
+        id: bootstrap
+        uses: alphagov/gds-github-workflows/.github/actions/terraform-bootstrap-noauth@main
+        with:
+          actions-id: ${{ secrets.actions-id }}
+          actions-secret: ${{ secrets.actions-secret }}
+          enable-private-access: ${{ inputs.enable-private-access }}
+          organization-name: ${{ inputs.organization-name }}
+          terraform-dir: ${{ inputs.terraform-dir }}
+          terraform-init-extra-args: ${{ inputs.terraform-init-extra-args }}
+          terraform-version: ${{ inputs.terraform-version }}
+          working-directory: ${{ inputs.working-directory }}
+      - name: Validate Examples
+        id: validate-examples
+        run: |
+          for dir in examples/*; do
+            if [ -d "$dir" ]; then
+              echo "--> Validating $dir"
+              terraform -chdir="${dir}" init -backend=false
+              terraform -chdir="${dir}" validate -no-color
+            fi
+          done
+
+  terraform-docs:
+    name: "Terraform Docs"
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    outputs:
+      result: ${{ steps.docs.outcome }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Terraform Docs
+        id: docs
+        uses: terraform-docs/gh-actions@6de6da0cefcc6b4b7a5cbea4d79d97060733093c # v1.4.1
+        with:
+          fail-on-diff: true
+          working-dir: ${{ inputs.terraform-dir }}
+
+  terraform-infracost:
+    name: "Get Cost Estimate"
+    if: github.event_name == 'pull_request' && inputs.enable-infracost
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Setup Infracost
+        uses: infracost/actions/setup@e9d6e6cd65e168e76b0de50ff9957d2fe8bb1832 # v3
+        with:
+          api-key: ${{ secrets.infracost-api-key }}
+          currency: GBP
+      - name: Checkout PR Base Branch
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          ref: "${{ github.event.pull_request.base.ref }}"
+      - name: Check For TF Files
+        id: baseline
+        run: |
+          if ls ./*.tf 2>/dev/null; then
+            echo "exists=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "exists=false" >> "${GITHUB_OUTPUT}"
+          fi
+      - name: Generate Cost Estimate Baseline
+        if: steps.baseline.outputs.exists == 'true'
+        run: |
+          infracost breakdown --path="${TF_ROOT}" \
+            --format=json \
+            --out-file=/tmp/infracost-base.json
+      - name: Checkout PR branch
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Generate Cost Estimate Difference
+        if: steps.baseline.outputs.exists == 'true'
+        run: |
+          infracost diff --path="${TF_ROOT}" \
+            --format=json \
+            --compare-to=/tmp/infracost-base.json \
+            --out-file=/tmp/infracost.json
+      - name: Generate Infracost Cost Estimate
+        if: steps.baseline.outputs.exists == 'false'
+        run: |
+          infracost breakdown --path="$}{TF_ROOT}" \
+            --format=json \
+            --out-file=/tmp/infracost.json
+      - name: Post Infracost comment
+        run: |
+          infracost comment github --path=/tmp/infracost.json \
+            --repo="${GITHUB_REPOSITORY}" \
+            --github-token=${{github.token}} \
+            --pull-request=${{github.event.pull_request.number}} \
+            --behavior=update
+
+  update-pr:
+    name: "Update PR"
+    if: github.event_name == 'pull_request' && (success() || failure())
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    needs:
+      - commitlint
+      - terraform-docs
+      - terraform-format
+      - terraform-init
+      - terraform-lint
+      - terraform-tests
+      - terraform-security
+      - terraform-checkov
+      - terraform-validate
+      - terraform-validate-examples
+    steps:
+      - name: Add PR Comment
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            // 1. Retrieve existing bot comments for the PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Pull Request Review Status') && comment.body.includes('<b>Working Directory:</b> \`${{ inputs.working-directory }}\`')
+            })
+
+            // 2. Prepare format of the comment
+            const output = `### Pull Request Review Status
+            * 🖌 <b>Terraform Format and Style:</b>     \`${{ needs.terraform-format.outputs.result }}\`
+            * 🔍 <b>Terraform Linting:</b>              \`${{ needs.terraform-lint.outputs.result }}\`
+            * 👮 <b>Terraform Security Check:</b>       \`${{ needs.terraform-security.outputs.result }}\`
+            * 👮 <b>Terraform Security Checkov:</b>     \`${{ needs.terraform-checkov.outputs.result }}\`
+            * 🔘 <b>Terraform Tests:</b>                \`${{ needs.terraform-tests.outputs.result }}\`
+            * 🔧 <b>Terraform Initialisation:</b>       \`${{ needs.terraform-init.outputs.result }}\`
+            * 🤖 <b>Terraform Validation:</b>           \`${{ needs.terraform-validate.outputs.result }}\`
+            * 🤖 <b>Terraform Example Validation:</b>   \`${{ needs.terraform-validate-examples.outputs.result }}\`
+            * 📖 <b>Terraform Documentation:</b>        \`${{ needs.terraform-docs.outputs.result }}\`
+            * 🔖 <b>Commitlint:</b>                     \`${{ needs.commitlint.outputs.result }}\`
+
+            *<b>Working Directory:</b> \`${{ inputs.working-directory }}\`*
+            *<b>Pusher:</b> @${{ github.actor }}, <b>Action:</b> \`${{ github.event_name }}\`*
+            *<b>Workflow Run Link:</b> ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}*`;
+
+            // 3. If we have a comment, update it, otherwise create a new one
+            if (botComment) {
+              github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              })
+            } else {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            }

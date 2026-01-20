@@ -1,0 +1,61 @@
+---
+name: "Terraform Bootstrap (Unauth)"
+description: "Terraform bootstrapping including init, no auth required"
+inputs:
+  actions-id:
+    description: "The application ID for the workflow token"
+    required: false
+  actions-secret:
+    description: "The application secret for the workflow token"
+    required: false
+  enable-private-access:
+    description: Optional flag to state if terraform requires pulling private modules
+    required: true
+  organization-name:
+    description: "The name of the Github organization"
+    required: false
+  terraform-dir:
+    description: "The directory to validate"
+    required: true
+  terraform-init-extra-args:
+    description: "Extra arguments to pass to terraform init"
+    required: false
+  terraform-version:
+    description: "The version of terraform to use"
+    required: true
+  working-directory:
+    description: "The working directory to run the action in"
+    required: true
+outputs:
+  outcome-init:
+    description: "Outcome of the init step"
+    value: ${{ steps.init.outcome }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+      with:
+        terraform_version: ${{ inputs.terraform-version }}
+
+    - name: Enable Private Modules
+      id: get_workflow_token
+      if: ${{ inputs.enable-private-access == 'true' }}
+      uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
+      with:
+        app-id: ${{ inputs.actions-id }}
+        private-key: ${{ inputs.actions-secret }}
+        owner: ${{ inputs.organization-name }}
+
+    - name: Setup Credentials
+      if: ${{ inputs.enable-private-access == 'true' }}
+      shell: bash
+      run: |
+        git config --global url."https://x-access-token:${{steps.get_workflow_token.outputs.token}}@github.com/".insteadOf "https://github.com/"
+        
+    - name: Terraform Init
+      id: init
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform -chdir=${{ inputs.terraform-dir }} init -backend=false ${{ inputs.terraform-init-extra-args }}
