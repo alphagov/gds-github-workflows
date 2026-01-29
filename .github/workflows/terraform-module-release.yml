@@ -10,14 +10,8 @@ on:
         type: boolean
         default: false
 
-      working-directory:
-        description: "Only applicable when enable-cliff is set to false. This determines the base directory that will be uploaded to the release."
-        required: false
-        type: string
-        default: ""
-
-      files:
-        description: "Only applicable when enable-cliff is set to false. This determines files from the base directory that will be uploaded to the release."
+      sparse-checkout:
+        description: "The path to the module to be released (for multi-module repos)"
         required: false
         type: string
         default: ""
@@ -44,6 +38,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           fetch-depth: 0
+          sparse-checkout: ${{ inputs.sparse-checkout }}
       - name: Set release variables
         id: vars
         run: |
@@ -79,5 +74,3 @@ jobs:
           generate_release_notes: true
           name: ${{ steps.vars.outputs.release-name }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          working_directory: ${{ inputs.working-directory }}
-          files: ${{ inputs.files }}
