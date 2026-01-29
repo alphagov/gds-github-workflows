@@ -73,4 +73,4 @@ jobs:
           generate_release_notes: true
           name: ${{ steps.vars.outputs.release-name }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          working-directory: ${{ inputs.working-directory }}
+          working_directory: ${{ inputs.working-directory }}
