@@ -39,7 +39,7 @@ jobs:
         with:
           fetch-depth: 0
           sparse-checkout: ${{ inputs.sparse-checkout }}
-          sparse-checkout-cone-mode: true
+          sparse-checkout-cone-mode: false
       - name: Set release variables
         id: vars
         run: |
