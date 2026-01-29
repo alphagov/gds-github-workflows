@@ -32,8 +32,8 @@ jobs:
         shell: pwsh
         run: |
           $compress = @{
-            Path = '.'
-            DestinationPath = '${{ inputs.module-name }}-${{ inputs.version }}.zip'
+            Path = '.\*'
+            DestinationPath = '${{ inputs.module-name }}_${{ inputs.version }}.zip'
             Passthru = $true
           }
           $zipFileName = Compress-Archive @compress |
