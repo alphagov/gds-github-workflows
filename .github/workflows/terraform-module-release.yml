@@ -4,29 +4,15 @@ name: Terraform Module Release
 on:
   workflow_call:
     inputs:
-      enable-cliff:
-        description: "Indicates if the repository uses cliff for changelog generation"
-        required: false
-        type: boolean
-        default: false
-
-      sparse-checkout:
-        description: "The path to the module to be released (for multi-module repos)"
-        required: false
-        type: string
-        default: ""
-
       module-name:
         description: "The name of the module being released (for multi-module repos)"
-        required: false
+        required: true
         type: string
-        default: ""
 
       version:
         description: "The version being released (e.g., v1.0.0)"
-        required: false
+        required: true
         type: string
-        default: ""
 
 jobs:
   release:
@@ -38,45 +24,28 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           fetch-depth: 0
-          sparse-checkout: ${{ inputs.sparse-checkout }}
+          sparse-checkout: ${{ inputs.module-name }}
           sparse-checkout-cone-mode: false
 
-      - name: Debug sparse checkout
-        run: |
-          tree .
-          
-      - name: Set release variables
+      - name: Zip module files
         id: vars
+        shell: pwsh
         run: |
-          if [ -n "${{ inputs.module-name }}" ]; then
-            echo "release-name=${{ inputs.module-name }} ${{ inputs.version }}" >> "$GITHUB_OUTPUT"
-            echo "tag-name=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "release-name=Release ${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-            echo "tag-name=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Generate Cliff Changelog
-        if: inputs.enable-cliff == true
-        uses: orhun/git-cliff-action@e16f179f0be49ecdfe63753837f20b9531642772 # v4
-        with:
-          config: .cliff/cliff.toml
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-        env:
-          OUTPUT: CHANGELOG.md
-          GITHUB_REPO: ${{ github.repository }}
-      - name: Create GitHub Release (with Cliff)
-        if: inputs.enable-cliff == true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${{ steps.vars.outputs.tag-name }}" \
-            --latest \
-            --notes-file CHANGELOG.md \
-            --title "${{ steps.vars.outputs.release-name }}"
+          $compress = @{
+            Path = '.'
+            DestinationPath = '${{ inputs.module-name }}-${{ inputs.version }}.zip'
+            Passthru = $true
+          }
+          $zipFileName = Compress-Archive @compress |
+          Select-Object -ExpandProperty Name
+
+          Write-Output -InputObject "ZIP_FILE_NAME=$zipFileName" |
+          Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Create GitHub Release
-        if: inputs.enable-cliff == false
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
         with:
           generate_release_notes: true
-          name: ${{ steps.vars.outputs.release-name }}
+          name: '${{ inputs.module-name }} ${{ inputs.version }}'
+          files: ${{ steps.vars.outputs.ZIP_FILE_NAME }}
           token: ${{ secrets.GITHUB_TOKEN }}
