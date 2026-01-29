@@ -75,3 +75,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ inputs.working-directory }}
           files: '*'
+          fail_on_unmatched_files: true
