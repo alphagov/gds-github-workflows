@@ -74,3 +74,4 @@ jobs:
           name: ${{ steps.vars.outputs.release-name }}
           token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ inputs.working-directory }}
+          files: '*'
