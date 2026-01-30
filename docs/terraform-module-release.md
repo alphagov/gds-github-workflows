@@ -31,9 +31,9 @@ For repositories containing multiple Terraform modules, use a tag format that in
 Examples:
 
 ```bash
-# Release terraform-azurerm-conditional-access at version 1.0.0
-git tag terraform-azurerm-conditional-access/v1.0.0
-git push origin terraform-azurerm-conditional-access/v1.0.0
+# Release azurerm-conditional-access at version 1.0.0
+git tag azurerm-conditional-access/v1.0.0
+git push origin azurerm-conditional-access/v1.0.0
 
 # Release terraform-azurerm-another-module at version 2.1.0
 git tag terraform-azurerm-another-module/v2.1.0
@@ -41,7 +41,7 @@ git push origin terraform-azurerm-another-module/v2.1.0
 ```
 
 This creates GitHub releases with titles like:
-- `terraform-azurerm-conditional-access v1.0.0`
+- `azurerm-conditional-access v1.0.0`
 - `terraform-azurerm-another-module v2.1.0`
 
 ## Usage
@@ -77,7 +77,7 @@ name: Release
 on:
   push:
     tags:
-      - "*/v*"  # Matches tags like terraform-azurerm-conditional-access/v1.0.0
+      - "*/v*"  # Matches tags like azurerm-conditional-access/v1.0.0
 
 permissions:
   contents: write
@@ -158,7 +158,7 @@ module "example" {
 
 ```hcl
 module "conditional_access" {
-  source = "git::https://github.com/org/terraform-modules-repo.git//terraform-azurerm-conditional-access?ref=terraform-azurerm-conditional-access/v1.0.0"
+  source = "git::https://github.com/org/terraform-modules-repo.git//azurerm-conditional-access?ref=azurerm-conditional-access/v1.0.0"
 }
 ```
 
