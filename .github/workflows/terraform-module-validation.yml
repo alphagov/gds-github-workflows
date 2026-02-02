@@ -56,6 +56,12 @@ on:
         required: false
         type: boolean
 
+      enable-terraform-docs:
+        default: true
+        description: "Whether to run terraform-docs"
+        required: false
+        type: boolean
+
       organization-name:
         default: "gds"
         description: "The name of the GitHub organization"
@@ -388,7 +394,7 @@ jobs:
   terraform-docs:
     name: "Terraform Docs"
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: ${{ github.actor != 'dependabot[bot]' && inputs.enable-terraform-docs }}
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
