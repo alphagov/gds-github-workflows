@@ -87,5 +87,7 @@ jobs:
 
       - name: Run pre-commit
         run: |
-          SKIP=${{ inputs.skip-hooks }} pre-commit run --all-files
           cat README.md
+          SKIP=${{ inputs.skip-hooks }} pre-commit run --all-files || exit_code=$?
+          cat README.md
+          exit ${exit_code:-0}
