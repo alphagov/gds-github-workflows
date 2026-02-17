@@ -4,14 +4,15 @@ name: Terraform Module Release
 on:
   workflow_call:
     inputs:
-      module-name:
-        description: "The name of the module being released (for multi-module repos)"
-        required: true
-        type: string
-
       version:
         description: "The version being released (e.g., v1.0.0)"
         required: true
+        type: string
+
+      module-name:
+        description: "The name of the module being released (for multi-module repos only). If not specified, the entire repo will be released."
+        default: ''
+        required: false
         type: string
 
 jobs:
@@ -24,18 +25,29 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           fetch-depth: 0
-          sparse-checkout: ${{ inputs.module-name }}
+          sparse-checkout: ${{ inputs.module-name != '' && inputs.module-name || null }}
           sparse-checkout-cone-mode: false
 
       - name: Zip module files
         id: vars
         shell: pwsh
         run: |
-          $compress = @{
-            Path = './${{ inputs.module-name }}/*.*'
-            DestinationPath = '${{ inputs.module-name }}_${{ inputs.version }}.zip'
-            Passthru = $true
+          if ([string]::IsNullOrEmpty(${{ inputs.module-name }})) {
+            Write-Output -InputObject "Module name not specified, releasing entire repo."
+            $compress = @{
+              Path = './*.*'
+              DestinationPath = 'repo_${{ inputs.version }}.zip'
+              Passthru = $true
+            }
+          } else {
+            Write-Output -InputObject "Module name specified: ${{ inputs.module-name }}. Releasing only files in that directory."
+            $compress = @{
+              Path = './${{ inputs.module-name }}/*.*'
+              DestinationPath = '${{ inputs.module-name }}_${{ inputs.version }}.zip'
+              Passthru = $true
+            }
           }
+
           $zipFileName = Compress-Archive @compress |
           Select-Object -ExpandProperty Name
 
@@ -46,6 +58,6 @@ jobs:
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
         with:
           generate_release_notes: true
-          name: '${{ inputs.module-name }} ${{ inputs.version }}'
+          name: ${{ inputs.module-name != '' && format('{0} {1}', inputs.module-name, inputs.version) || format('Repo {0}', inputs.version) }}
           files: ${{ steps.vars.outputs.ZIP_FILE_NAME }}
           token: ${{ secrets.GITHUB_TOKEN }}
