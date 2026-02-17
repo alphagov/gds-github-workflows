@@ -32,7 +32,7 @@ jobs:
         id: vars
         shell: pwsh
         run: |
-          if ([string]::IsNullOrEmpty(${{ inputs.module-name }})) {
+          if ([string]::IsNullOrWhiteSpace('${{ inputs.module-name }}')) {
             Write-Output -InputObject "Module name not specified, releasing entire repo."
             $compress = @{
               Path = './*.*'
