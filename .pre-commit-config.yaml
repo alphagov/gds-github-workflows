@@ -109,7 +109,7 @@ repos:
     hooks:
       - id: terraform_test
         name: Terraform test
-        entry: bash -c 'for dir in azurerm-* msgraph-*; do [ -d "$dir" ] && terraform -chdir="$dir" test || exit 1; done'
+        entry: bash -c 'find . -name "*.tf" -not -path "*/.terraform/*" -exec dirname {} \; | sort -u | while read dir; do terraform -chdir="$dir" test || exit 1; done'
         language: system
         files: \.tf$
         pass_filenames: false
