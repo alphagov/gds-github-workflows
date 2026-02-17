@@ -72,9 +72,9 @@ jobs:
       - name: Install terraform-docs
         working-directory: ${{ runner.temp }}
         run: |
-          curl -sSLo terraform-docs-v0.21.0-linux-amd64.tar.gz "https://github.com/terraform-docs/terraform-docs/releases/download/${{ env.TERRAFORM_DOCS_VERSION }}/terraform-docs-v0.21.0-linux-amd64.tar.gz"
-          echo "${{ env.TERRAFORM_DOCS_SHA256 }}  terraform-docs-v0.21.0-linux-amd64.tar.gz" | sha256sum -c -
-          tar -xzf terraform-docs-v0.21.0-linux-amd64.tar.gz
+          curl -sSLo "terraform-docs-${{ env.TERRAFORM_DOCS_VERSION }}-linux-amd64.tar.gz" "https://github.com/terraform-docs/terraform-docs/releases/download/${{ env.TERRAFORM_DOCS_VERSION }}/terraform-docs-${{ env.TERRAFORM_DOCS_VERSION }}-linux-amd64.tar.gz"
+          echo "${{ env.TERRAFORM_DOCS_SHA256 }}  terraform-docs-${{ env.TERRAFORM_DOCS_VERSION }}-linux-amd64.tar.gz" | sha256sum -c -
+          tar -xzf "terraform-docs-${{ env.TERRAFORM_DOCS_VERSION }}-linux-amd64.tar.gz"
           chmod +x terraform-docs
           mv terraform-docs /usr/local/bin/terraform-docs
 
@@ -88,4 +88,4 @@ jobs:
 
       - name: Run pre-commit
         run: |
-          SKIP=${{ inputs.skip-hooks }} pre-commit run --all-files || exit_code=$?
+          SKIP=${{ inputs.skip-hooks }} pre-commit run --all-files
