@@ -27,8 +27,7 @@ on:
         description: 'Comma-separated list of hooks to skip'
         required: false
         type: string
-        # TODO: Figure out what's wrong with the codespell pre-commit hook - it's not paying attention to .codespellignore when running in GitHub Actions
-        default: 'conventional-branch-name,codespell'
+        default: 'conventional-branch-name'
 
 permissions:
   contents: read
