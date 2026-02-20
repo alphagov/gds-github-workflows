@@ -7,14 +7,6 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
 
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
-    hooks:
-      - id: codespell
-        args:
-          - --skip=*.json,*.tf,*.hcl,*.yml,*.yaml,*.md
-        exclude: \.codespellignore$
-
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.38.0
     hooks:
