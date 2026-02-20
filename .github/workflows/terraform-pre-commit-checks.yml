@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: '3'
+      pre-commit-version:
+        description: 'Pre-commit version to use'
+        required: false
+        type: string
+        default: 'latest'
       terraform-version:
         description: 'Terraform version to use'
         required: false
@@ -74,13 +79,15 @@ jobs:
 
       - name: Setup Checkov
         run: |
-          checkov_to_install="checkov"
-          [ "${{ inputs.checkov-version }}" -ne "latest" ] && checkov_to_install="checkov==${{ inputs.checkov-version }}"
-          pip install "$checkov_to_install"
+          package_spec="checkov"
+          [ "${{ inputs.checkov-version }}" != "latest" ] && package_spec+="==${{ inputs.checkov-version }}"
+          pip install "$package_spec"
 
       - name: Setup pre-commit
         run: |
-          pip install pre-commit
+          tool="pre-commit"
+          [ "${{ inputs.pre-commit-version }}" != "latest" ] && tool+="==${{ inputs.pre-commit-version }}"
+          pip install "$tool"
 
       - name: Install terraform-docs
         working-directory: ${{ runner.temp }}
