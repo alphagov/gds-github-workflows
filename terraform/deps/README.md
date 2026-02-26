@@ -3,6 +3,7 @@
 This composite action installs the necessary tools and dependencies for Terraform module validation and documentation.
 
 It installs:
+
 - Terraform
 - TFLint
 - Trivy

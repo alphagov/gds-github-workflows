@@ -29,7 +29,7 @@ For each action usage guide, refer to each action `README.md` or `action.yml` fi
 
 ## Add new github workflows
 
-Actions are defined as [composites](https://docs.github.com/en/actions/tutorials/create-actions/create-a-composite-action). It allows each action the flexibility to be included across many workflows.
+Actions are defined as [composites(https://docs.github.com/en/actions/tutorials/create-actions/create-a-composite-action). It allows each action the flexibility to be included across many workflows.
 
 1. Install [pre-commit](https://pre-commit.com/).
 2. Create a directory in the root of the repo, with the following convention: `<category [optional]>/<action_name>/action.yml`.

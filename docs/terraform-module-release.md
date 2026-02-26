@@ -3,6 +3,7 @@
 This GitHub Actions workflow template ([terraform-module-release.yml](../.github/workflows/terraform-module-release.yml)) can be used with Terraform repositories to automatically create a GitHub release when a version has been tagged.
 
 The workflow supports:
+
 - **Single-module repositories** with standard `v*` tags
 - **Multi-module repositories** with independent versioning using `<module-name>/v*` tags
 - Two modes for release notes generation:
@@ -19,34 +20,6 @@ For repositories containing a single Terraform module, use standard semantic ver
 git tag v1.0.0
 git push origin v1.0.0
 ```
-
-### Multi-Module Repository
-
-For repositories containing multiple Terraform modules, use a tag format that includes the module name:
-
-```
-<module-name>/v<version>
-```
-
-Examples:
-
-```bash
-# Release azurerm-conditional-access at version 1.0.0
-git tag azurerm-conditional-access/v1.0.0
-git push origin azurerm-conditional-access/v1.0.0
-
-# Release terraform-azurerm-another-module at version 2.1.0
-git tag terraform-azurerm-another-module/v2.1.0
-git push origin terraform-azurerm-another-module/v2.1.0
-```
-
-This creates GitHub releases with titles like:
-- `azurerm-conditional-access v1.0.0`
-- `terraform-azurerm-another-module v2.1.0`
-
-## Usage
-
-### Basic Usage (Single-Module Repository)
 
 Create a new workflow file in your Terraform repository (e.g. `.github/workflows/release.yml`) with the below contents:
 
@@ -68,6 +41,26 @@ jobs:
 ```
 
 ### Multi-Module Repository
+
+For repositories containing multiple Terraform modules, use a tag format that includes the module name:
+
+`<module-name>/v<version>`
+
+Examples:
+
+```bash
+# Release azurerm-conditional-access at version 1.0.0
+git tag azurerm-conditional-access/v1.0.0
+git push origin azurerm-conditional-access/v1.0.0
+
+# Release terraform-azurerm-another-module at version 2.1.0
+git tag terraform-azurerm-another-module/v2.1.0
+git push origin terraform-azurerm-another-module/v2.1.0
+```
+
+This creates GitHub releases with titles like:
+- `azurerm-conditional-access v1.0.0`
+- `terraform-azurerm-another-module v2.1.0`
 
 For repositories with multiple modules, create a workflow that extracts the module name from the tag:
 
@@ -109,7 +102,7 @@ jobs:
       version: ${{ needs.extract-module.outputs.version }}
 ```
 
-### Advanced Usage (Git Cliff Changelog)
+## Advanced Usage (Git Cliff Changelog)
 
 To use git-cliff for changelog generation, set `enable-cliff: true` and ensure you have a `.cliff/cliff.toml` configuration file in your repository:
 
@@ -146,17 +139,13 @@ jobs:
 
 Once a module is released, users can reference it in their Terraform configurations using the GitHub source with a ref:
 
-### Single-Module Repository
-
 ```hcl
+# Single-Module Repository
 module "example" {
   source = "git::https://github.com/org/terraform-module-repo.git?ref=v1.0.0"
 }
-```
 
-### Multi-Module Repository
-
-```hcl
+# Multi-Module Repository
 module "conditional_access" {
   source = "git::https://github.com/org/terraform-modules-repo.git//azurerm-conditional-access?ref=azurerm-conditional-access/v1.0.0"
 }
