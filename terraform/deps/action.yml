@@ -11,12 +11,7 @@ inputs:
     description: 'Terraform-docs version to use'
     required: false
     type: string
-    default: 'v0.21.0'
-  terraform-docs-sha256:
-    description: 'Terraform-docs sha256 to verify'
-    required: false
-    type: string
-    default: '2fdd81b8d21ff1498cd559af0dcc5d155835f84600db06d3923e217124fc735a'
+    default: 'latest'
   tflint-version:
     description: 'TFLint version to use'
     required: false
@@ -38,9 +33,14 @@ runs:
   steps:
     - name: Setup Python
       uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: 3
 
     - name: Setup go
       uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+      with:
+        go-version: 'stable'
+        cache: false # not applicable since we don't use module dependencies `go.mod`
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
@@ -52,15 +52,6 @@ runs:
       with:
         version: ${{ inputs.trivy-version }}
 
-    - name: Install tflint
-      shell: bash
-      run: |
-        echo "Install tflint"
-        package_spec="github.com/terraform-linters/tflint"
-        [ "${{ inputs.tflint-version }}" != "latest" ] && package_spec+="@${{ inputs.tflint-version }}"
-        go install \
-          "$package_spec"
-
     - name: Install Checkov
       shell: bash
       run: |
@@ -71,13 +62,16 @@ runs:
           -q \
           "$package_spec"
 
-    - name: Install terraform-docs
+    - name: Install Go tools
       shell: bash
-      working-directory: ${{ runner.temp }}
       run: |
-        echo "Install terraform-docs"
-        curl -sSLo "terraform-docs-${{ inputs.terraform-docs-version }}-linux-amd64.tar.gz" "https://github.com/terraform-docs/terraform-docs/releases/download/${{ inputs.terraform-docs-version }}/terraform-docs-${{ inputs.terraform-docs-version }}-linux-amd64.tar.gz"
-        echo "${{ inputs.terraform-docs-sha256 }}  terraform-docs-${{ inputs.terraform-docs-version }}-linux-amd64.tar.gz" | sha256sum -c -
-        tar -xzf "terraform-docs-${{ inputs.terraform-docs-version }}-linux-amd64.tar.gz"
-        chmod +x terraform-docs
-        mv terraform-docs /usr/local/bin/terraform-docs
+        declare -A go_tools=(
+          ["tflint"]="github.com/terraform-linters/tflint@${{ inputs.tflint-version }}"
+          ["terraform-docs"]="github.com/terraform-docs/terraform-docs@${{ inputs.terraform-docs-version }}"
+        )
+
+        for t in "${!go_tools[@]}"; do
+          echo "Install $t"
+          go install "${go_tools[$t]}"
+          echo
+        done
