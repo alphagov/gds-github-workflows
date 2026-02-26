@@ -36,27 +36,37 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Setup Python
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+
+    - name: Setup go
+      uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
       with:
         terraform_version: ${{ inputs.terraform-version }}
-
-    - name: Setup TFLint
-      uses: terraform-linters/setup-tflint@4cb9feea73331a35b422df102992a03a44a3bb33 # v6.2.1
-      with:
-        tflint_version: ${{ inputs.tflint-version }}
 
     - name: Setup Trivy
       uses: aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1 # v0.2.4
       with:
         version: ${{ inputs.trivy-version }}
 
+    - name: Install tflint
+      shell: bash
+      run: |
+        echo "Install tflint"
+        package_spec="github.com/terraform-linters/tflint"
+        [ "${{ inputs.tflint-version }}" != "latest" ] && package_spec+="@${{ inputs.tflint-version }}"
+        go install \
+          "$package_spec"
+
     - name: Install Checkov
       shell: bash
       run: |
         echo "Install Checkov"
         package_spec="checkov"
-        [ "${{ inputs.checkov-version }}" != "latest" ] && package_spec+="==$version"
+        [ "${{ inputs.checkov-version }}" != "latest" ] && package_spec+="==${{ inputs.checkov-version }}"
         pip install \
           -q \
           "$package_spec"
