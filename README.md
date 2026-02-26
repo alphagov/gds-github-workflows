@@ -2,12 +2,42 @@
 
 This repository contains a collection of GitHub Actions workflow templates that can be used with various types of repositories to automate the build, test, and deployment of applications and infrastructure.
 
-## Workflows
+## Consuming actions from this repo
 
-Please refer to the following documentation for more information on the workflows:
+Create the workflow job, and then include the action as a step:
+`- uses: alphagov/gds-github-workflows/{directories}@{ref}`
 
-### Terraform Workflows
-- [Terraform Module Validation](./docs/terraform-module-validation.md) - Validate Terraform modules
+E.g. for `pre-commit` action in `pre-commit/action.yml`:
+
+```yml
+...
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Run pre-commit
+      uses: alphagov/gds-github-workflows/pre-commit@main
+```
+
+The `ref` can be a branch or a git tag, but for sensitive repositories it is **highly recommended** to use the commit SHA.
+
+For each action usage guide, refer to each action `README.md` or `action.yml` file.
+
+## Add new github workflows
+
+Actions are defined as [composites(https://docs.github.com/en/actions/tutorials/create-actions/create-a-composite-action). It allows each action the flexibility to be included across many workflows.
+
+1. Install [pre-commit](https://pre-commit.com/).
+2. Create a directory in the root of the repo, with the following convention: `<category [optional]>/<action_name>/action.yml`.
+
+## Workflows examples
+
+Examples of workflows using the composite actions:
+- [Terraform Validation](./docs/terraform-module-validation.md) - Validate Terraform code
 - [Terraform Module Release](./docs/terraform-module-release.md) - Release and publish Terraform modules
 
 ## How to setup Deployment Protection & Approval
