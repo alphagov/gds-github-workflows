@@ -36,7 +36,7 @@ permissions:
 
 jobs:
   release:
-    uses: alphagov/gds-github-workflows/.github/workflows/terraform-module-release.yml@main
+    uses: alphagov/gds-github-workflows/.github/workflows/terraform-module-release.yml@<commit SHA> # v<semantic version>
     name: GitHub Release
 ```
 
@@ -94,35 +94,12 @@ jobs:
           echo "Module: ${MODULE}, Version: ${VERSION}"
 
   release:
-    uses: alphagov/gds-github-workflows/.github/workflows/terraform-module-release.yml@main
+    uses: alphagov/gds-github-workflows/.github/workflows/terraform-module-release.yml@<commit SHA> # v<semantic version>
     name: GitHub Release
     needs: extract-module
     with:
       module-name: ${{ needs.extract-module.outputs.module-name }}
       version: ${{ needs.extract-module.outputs.version }}
-```
-
-## Advanced Usage (Git Cliff Changelog)
-
-To use git-cliff for changelog generation, set `enable-cliff: true` and ensure you have a `.cliff/cliff.toml` configuration file in your repository:
-
-```yml
-name: Release
-
-on:
-  push:
-    tags:
-      - "v*"
-
-permissions:
-  contents: write
-
-jobs:
-  release:
-    uses: alphagov/gds-github-workflows/.github/workflows/terraform-module-release.yml@main
-    name: GitHub Release
-    with:
-      enable-cliff: true
 ```
 
 ## Inputs
