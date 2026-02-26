@@ -37,7 +37,7 @@ Actions are defined as [composites(https://docs.github.com/en/actions/tutorials/
 ## Workflows examples
 
 Examples of workflows using the composite actions:
-- [Terraform Validation](./docs/terraform-module-validation.md) - Validate Terraform code
+- [Terraform Validation](./docs/terraform-validation.md) - Validate Terraform code
 - [Terraform Module Release](./docs/terraform-module-release.md) - Release and publish Terraform modules
 
 ## How to setup Deployment Protection & Approval
