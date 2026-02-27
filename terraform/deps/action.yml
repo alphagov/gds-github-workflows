@@ -56,7 +56,7 @@ runs:
       run: |
         echo "Install Checkov"
         package_spec="checkov"
-        [ "${{ inputs.checkov-version }}" != "latest" ] && package_spec+="==$version"
+        [ "${{ inputs.checkov-version }}" != "latest" ] && package_spec+="==${{ inputs.checkov-version }}"
         pip install \
           -q \
           "$package_spec"
