@@ -13,7 +13,7 @@ inputs:
     type: string
     default: 'v0.21.0'
   terraform-docs-sha256:
-    description: 'Terraform-docs sha256 to verify'
+    description: 'Terraform-docs sha256 checksum to verify'
     required: false
     type: string
     default: '2fdd81b8d21ff1498cd559af0dcc5d155835f84600db06d3923e217124fc735a'
@@ -21,7 +21,14 @@ inputs:
     description: 'TFLint version to use'
     required: false
     type: string
-    default: 'latest'
+    default: 'v0.61.0'
+  tflint-sha256:
+    description: 'TFLint sha256 checksum to verify'
+    required: false
+    type: string
+    default: |
+      ca4e4e8cb7cc3436f2b6979e9c4fd4e2623a66fcca1ad1fe12f8669967636ae2
+      999c25cfdb5208fe1133dec6b219e666a39fc2a7a0786a781dc9924ea5945ebf
   trivy-version:
     description: 'Trivy version to use'
     required: false
@@ -45,11 +52,17 @@ runs:
       uses: terraform-linters/setup-tflint@4cb9feea73331a35b422df102992a03a44a3bb33 # v6.2.1
       with:
         tflint_version: ${{ inputs.tflint-version }}
+        checksums: ${{ inputs.tflint-sha256 }}
 
     - name: Setup Trivy
       uses: aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1 # v0.2.4
       with:
         version: ${{ inputs.trivy-version }}
+
+    - name: Setup Python
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: '3'
 
     - name: Install Checkov
       shell: bash
