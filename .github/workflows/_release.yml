@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       action-name:
-        description: "Name of the action being released. Must correspond to the directory name"
+        description: "Name of the action being released (must correspond to the directory name)"
         required: true
         type: string
       version:
         description: |
-          Optional semver version (example: 1.2.3).
+          (Optional) Semver version (example: 1.2.3).
           If not provided, it will fetch latest tag and auto-bump patch
         required: false
         type: string
@@ -48,15 +48,17 @@ jobs:
       - name: Validate input version
         if: ${{ inputs.version }}
         run: |
+          version="${{ inputs.version }}"
+
           # Check tag doesn't exist already
-          if git rev-parse "v$VERSION" &>/dev/null; then
-            echo "Tag v$VERSION already exists"
+          if git rev-parse "v$version" &>/dev/null; then
+            echo "Tag v$version already exists"
             exit 1
           fi
 
           # Validate semver
-          if [[ ! "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "Invalid version: $VERSION"
+          if [[ ! "$version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $version"
             echo "Expected semver format like: 1.2.3"
             exit 1
           fi
