@@ -44,4 +44,5 @@ runs:
       run: >
         pre-commit run \
           --color always \
+          --show-diff-on-failure \
           --all-files
