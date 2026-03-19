@@ -1,13 +1,6 @@
 name: Terraform test
 description: Discover and run Terraform tests
 
-inputs:
-  terraform-version:
-    description: "The version of terraform to use"
-    type: string
-    required: false
-    default: "v1.14.7"
-
 runs:
   using: composite
   steps:
@@ -26,7 +19,7 @@ runs:
           echo "::group::Test ($dir)"
           echo "Running terraform test in $dir"
           terraform -chdir="$dir" init -backend=false
-          if ! terraform -chdir="$dir" test -verbose; then
+          if ! terraform -chdir="$dir" test; then
             failed=1
           fi
           echo "::endgroup::"
