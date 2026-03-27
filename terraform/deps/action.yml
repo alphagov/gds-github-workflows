@@ -35,7 +35,7 @@ inputs:
     description: 'Trivy version to use'
     required: false
     type: string
-    default: 'latest'
+    default: 'v0.69.3'
   checkov-version:
     description: 'Checkov version to use'
     required: false
