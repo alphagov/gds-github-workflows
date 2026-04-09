@@ -8,11 +8,18 @@ on:
     branches:
       - main
 
+# NOTE: This declaration defaults all GH other permissions to none.
+# - Create subsequent permissions scoped to job only after confirming with a techlead
+# - Declaration here follows the policy defined in ADR-EA007
 permissions:
-  contents: read
+  contents: none # Set so other permissions take the value 'none' by default
+  id-token: none # Prevent OIDC token generation (‘none’ is the default)
+  packages: none # Prevent package access (‘none’ is the default)
 
 jobs:
   pre-commit:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
