@@ -25,12 +25,6 @@ runs:
       run: |
         set -e
 
-        # Check if plan file exists
-        if [[ ! -f "${{ inputs.plan_file }}" ]]; then
-          echo "Error: Plan file '${{ inputs.plan_file }}' not found"
-          exit 1
-        fi
-
         # Create JSON payload with coment content
         jq -n \
           '{body: ("###" + ${{ inputs.comment_title }} + "\n```\n" + ${{ inputs.comment_body }} + "\n```")}' > /tmp/payload.json
