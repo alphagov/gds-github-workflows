@@ -1,5 +1,5 @@
 name: 'Comment PR'
-description: 'Cross post a comment from a workflow step in one repo to a PR in another repo'
+description: 'This action provides a standardised way to report logs, deployment statuses, or tool outputs (like Terraform plans) regardless of where the target PR lives.'
 
 inputs:
   token:
