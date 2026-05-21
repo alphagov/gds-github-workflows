@@ -17,6 +17,11 @@ inputs:
     required: false
     type: string
     default: 'conventional-branch-name'
+  extra-args:
+    description: 'Additional arguments to pass to pre-commit run (e.g., --hook-stage pre-push)'
+    required: false
+    type: string
+    default: ''
 
 runs:
   using: composite
@@ -45,4 +50,5 @@ runs:
         pre-commit run \
           --color always \
           --show-diff-on-failure \
-          --all-files
+          --all-files \
+          ${{ inputs.extra-args }}
