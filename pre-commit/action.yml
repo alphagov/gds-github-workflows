@@ -17,8 +17,8 @@ inputs:
     required: false
     type: string
     default: 'conventional-branch-name'
-  extra-args:
-    description: 'Additional arguments to pass to pre-commit run (e.g., --hook-stage pre-push)'
+  hook-stage:
+    description: 'pre-commit hook stage (e.g. pre-commit, pre-push, manual)'
     required: false
     type: string
     default: ''
@@ -45,10 +45,11 @@ runs:
     - name: Run pre-commit on all files
       env:
         SKIP: ${{ inputs.skip-hooks }}
+        HOOK_STAGE: ${{ inputs.hook-stage }}
       shell: bash
-      run: >
+      run: |
         pre-commit run \
           --color always \
           --show-diff-on-failure \
           --all-files \
-          ${{ inputs.extra-args }}
+          ${HOOK_STAGE:+--hook-stage "$HOOK_STAGE"}
