@@ -17,6 +17,11 @@ inputs:
     required: false
     type: string
     default: 'conventional-branch-name'
+  hook-stages:
+    description: 'Space-separated pre-commit hook stages (e.g. "pre-commit pre-push"). Empty runs the default stage.'
+    required: false
+    type: string
+    default: ''
 
 runs:
   using: composite
@@ -40,9 +45,17 @@ runs:
     - name: Run pre-commit on all files
       env:
         SKIP: ${{ inputs.skip-hooks }}
+        HOOK_STAGES: ${{ inputs.hook-stages }}
       shell: bash
-      run: >
-        pre-commit run \
-          --color always \
-          --show-diff-on-failure \
-          --all-files
+      run: |
+        set -e
+        read -r -a stages <<< "$HOOK_STAGES"
+        if [ "${#stages[@]}" -eq 0 ]; then
+          pre-commit run --color always --show-diff-on-failure --all-files
+        else
+          args=()
+          for stage in "${stages[@]}"; do
+            args+=("--hook-stage" "$stage")
+          done
+          pre-commit run --color always --show-diff-on-failure --all-files "${args[@]}"
+        fi
