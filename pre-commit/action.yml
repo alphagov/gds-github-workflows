@@ -48,13 +48,14 @@ runs:
         HOOK_STAGES: ${{ inputs.hook-stages }}
       shell: bash
       run: |
+        set -e
         read -r -a stages <<< "$HOOK_STAGES"
         if [ "${#stages[@]}" -eq 0 ]; then
           pre-commit run --color always --show-diff-on-failure --all-files
         else
-          rc=0
+          args=()
           for stage in "${stages[@]}"; do
-            pre-commit run --color always --show-diff-on-failure --all-files --hook-stage "$stage" || rc=$?
+            args+=("--hook-stage" "$stage")
           done
-          exit "$rc"
+          pre-commit run --color always --show-diff-on-failure --all-files "${args[@]}"
         fi
