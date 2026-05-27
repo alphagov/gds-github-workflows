@@ -11,14 +11,14 @@ inputs:
     description: 'Terraform-docs version to use'
     required: false
     type: string
-    default: 'v0.21.0'
+    default: 'v0.24.0'
   terraform-docs-sha256:
     description: 'Terraform-docs sha256 checksum to verify'
     required: false
     type: string
     default: |
-      2fdd81b8d21ff1498cd559af0dcc5d155835f84600db06d3923e217124fc735a
-      35b2e6846268841484e6eea7d00d7dfe2c94b4725e52cfe19aa6c26a86c32edc
+      9005daf969de0b50134493a2c00078b49f5f5b39d021cda7c89bf4d4f3d776d3
+      d12bd7b73c1fc9c64efc79f8157dd713dabd559f1ecf3cfc0f42e32279a155fd
   tflint-version:
     description: 'TFLint version to use'
     required: false
