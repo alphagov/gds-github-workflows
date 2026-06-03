@@ -1,41 +1,66 @@
 # GitHub CI/CD Workflows
 
-This repository contains a collection of GitHub Actions workflow templates that can be used with various types of repositories to automate the build, test, and deployment of applications and infrastructure.
+This repository contains reusable elements of GitHub Actions - Composite Actions and Reusable Workflows - designed to be called by service teams' GitHub Actions workflows. They do things like automate the build, test, and deployment of applications and infrastructure.
 
-## Consuming Github Actions from this repo
+Designed by GDS Engineering Enablement, for use in GDS.
 
-Create the workflow job, and then include the action as a step:
+## Offerings
 
-`- uses: alphagov/gds-tech-and-security-github-actions/{directories}@{ref}`
+Reusable elements and their docs:
 
-E.g. for `pre-commit` action in `pre-commit/action.yml`:
+- [Terraform Validation](./docs/terraform-validation.md) - Validate Terraform code
+  - [terraform/deps](terraform/deps/README.md) - installs binaries including Terraform and related ones needed for "terraform validation" (Composite Action)
+  - [pre-commit](pre-commit/action.yml) - runs pre-commit (Composite Action)
+- [Terraform Module Release](./docs/terraform-module-release.md) - Release and publish Terraform modules (Reusable Workflow)
+- [Dispatcher](./dispatcher/README.md) - Invokes a workflow in another repo - an implemention of the Dispatch -> Receiver pattern (Composite Action)
+- [Comment-PR](./comment-pr/README.md) - Adds a comment to a pull request in another repo (typically used by the workflow that was triggered by the Dispatcher to report results back to the original PR) (Composite Action)
+- [Update-check](./update-check/README.md) - Updates a Pull Request 'Check' result (green tick or red cross) on another repo (typically used by the workflow that was triggered by the Dispatcher to report results back to the original PR) (Composite Action)
+
+## How to use the Composite Actions in this repo
+
+In your GitHub Action workflow, you can call a Composite Action in this repo in a step like this:
+
+`- uses: alphagov/gds-tech-and-security-github-actions/{directory-containing-action.yml}@{ref}`
+
+For each action's usage guide, refer to each action `README.md` or `action.yml` file.
+
+### Example
+
+This example workflow calls the `terraform/deps` Action and `pre-commit` Action:
 
 ```yml
 ...
 
 jobs:
-  pre-commit:
-    runs-on: ubuntu-latest
+  pre-commit-checks:
+    name: Pre-commit checks
+    permissions:
+      contents: read
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-    - name: Run pre-commit
-      uses: alphagov/gds-tech-and-security-github-actions/pre-commit@main
+      - name: Install terraform and dependencies
+        uses: alphagov/gds-tech-and-security-github-actions/terraform/deps@195d742673ad36cd67aa1dd8847974d034668d1a # v0.1.17
+
+      - name: Run pre-commit
+        uses: alphagov/gds-tech-and-security-github-actions/pre-commit@195d742673ad36cd67aa1dd8847974d034668d1a # v0.1.17
 ```
 
-The `ref` can be a branch or a git tag, but for sensitive repositories it is **highly recommended** to use the commit SHA.
+(It needs terraform installed because pre-commit will run `terraform fmt`, as defined in pre-commit.yaml, that you can imagine is in the repo for this example)
 
-For each action usage guide, refer to each action `README.md` or `action.yml` file.
+The `ref` should be the full commit SHA, according to EE standard and the [GDS Way](https://gds-way.digital.cabinet-office.gov.uk/standards/source-code/using-github-actions.html#pinning-actions).
 
-## Add new Github Actions
+## Development of this repo
+
+### Add new Actions
 
 Actions are defined as [composites](https://docs.github.com/en/actions/tutorials/create-actions/create-a-composite-action). It allows each action the flexibility to be included across many workflows.
 
 1. Install [pre-commit](https://pre-commit.com/).
 1. Create a directory in the root of the repo, with the following convention: `<category [optional]>/<action_name>/action.yml`.
 
-## Release a new Github Action version
+### Release a new Action version
 
 1. Go to [Release Action](https://github.com/alphagov/gds-tech-and-security-github-actions/actions/workflows/_release.yml) workflow
 1. Press the button `Run workflow` (only works for the `default` branch)
@@ -43,12 +68,6 @@ Actions are defined as [composites](https://docs.github.com/en/actions/tutorials
 1. (optional) specify a version. If not specified, it will auto-bump the latest tag
 1. Press `Run workflow` again to trigger the workflow
 1. The changelog is auto-generated once it is finished. If necessary, please modify it to include important changes
-
-## Workflows examples
-
-Examples of workflows using the composite actions:
-- [Terraform Validation](./docs/terraform-validation.md) - Validate Terraform code
-- [Terraform Module Release](./docs/terraform-module-release.md) - Release and publish Terraform modules
 
 ## How to setup Deployment Protection & Approval
 
