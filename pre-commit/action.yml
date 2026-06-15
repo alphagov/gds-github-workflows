@@ -22,6 +22,16 @@ inputs:
     required: false
     type: string
     default: ''
+  all-files:
+   default: true
+   required: true
+   type: boolean
+   description: 'Set to true if pre-commit should run on all files'
+  extra-args:
+    description: 'Extra arguments to pass into the pre-commit executable'
+    required: false
+    type: string
+    default: ''
 
 runs:
   using: composite
@@ -46,16 +56,18 @@ runs:
       env:
         SKIP: ${{ inputs.skip-hooks }}
         HOOK_STAGES: ${{ inputs.hook-stages }}
+        EXTRA_ARGS: ${{ inputs.extra-args }}
+        ALL_FILES_ARG: ${{inputs.all-files && '--all-files' || '' }}
       shell: bash
       run: |
         set -e
         read -r -a stages <<< "$HOOK_STAGES"
         if [ "${#stages[@]}" -eq 0 ]; then
-          pre-commit run --color always --show-diff-on-failure --all-files
+          pre-commit run --color always --show-diff-on-failure $ALL_FILES_ARG $EXTRA_ARGS
         else
           args=()
           for stage in "${stages[@]}"; do
             args+=("--hook-stage" "$stage")
           done
-          pre-commit run --color always --show-diff-on-failure --all-files "${args[@]}"
+          pre-commit run --color always --show-diff-on-failure $ALL_FILES_ARG "${args[@]}" $EXTRA_ARGS
         fi
