@@ -23,10 +23,10 @@ inputs:
     type: string
     default: ''
   all-files:
-   default: true
-   required: true
-   type: boolean
-   description: 'Set to true if pre-commit should run on all files'
+    default: true
+    required: true
+    type: boolean
+    description: 'Set to true if pre-commit should run on all files'
   extra-args:
     description: 'Extra arguments to pass into the pre-commit executable'
     required: false
@@ -57,7 +57,7 @@ runs:
         SKIP: ${{ inputs.skip-hooks }}
         HOOK_STAGES: ${{ inputs.hook-stages }}
         EXTRA_ARGS: ${{ inputs.extra-args }}
-        ALL_FILES_ARG: ${{inputs.all-files && '--all-files' || '' }}
+        ALL_FILES_ARG: ${{ inputs.all-files == true && '--all-files' || '' }}
       shell: bash
       run: |
         set -e
