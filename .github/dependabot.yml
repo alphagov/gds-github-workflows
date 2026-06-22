@@ -2,7 +2,9 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
-    directory: "/"
+    directory:
+      - /
+      - /terraform/deps/*
     schedule:
       interval: "weekly"
     ignore:
