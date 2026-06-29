@@ -1,0 +1,83 @@
+name: Terraform checks
+description: Terraform CI checks
+
+inputs:
+  terraform-version:
+    description: 'Terraform version to use'
+    required: true
+  working-directory:
+    description: 'Terraform root directory'
+    required: false
+    default: 'terraform'
+  modules-directory:
+    description: 'Terraform modules directory for docs generation'
+    required: false
+    default: 'terraform/modules'
+  tflint-config:
+    description: 'Path to tflint config file'
+    required: false
+    default: '.tflint.hcl'
+  terraform-docs-config:
+    description: 'Path to terraform-docs config file'
+    required: false
+    default: '.terraform-docs.yml'
+
+runs:
+  using: composite
+  steps:
+    - name: Install terraform and dependencies
+      uses: alphagov/gds-tech-and-security-github-actions/terraform/deps@b3feeff4a9b734aa33f2ef59c4cb1a82eb239937 # v0.1.19
+      with:
+        terraform-version: ${{ inputs.terraform-version }}
+
+    - name: Terraform fmt
+      shell: bash
+      run: terraform fmt -recursive -check ${{ inputs.working-directory }}
+
+    - name: Terraform init
+      shell: bash
+      run: |
+        terraform -chdir=${{ inputs.working-directory }} init \
+          -backend=false \
+          -input=false
+
+    - name: Terraform validate
+      shell: bash
+      run: |
+        terraform -chdir=${{ inputs.working-directory }} validate \
+          -json \
+          -no-color
+
+    - name: Terraform docs
+      shell: bash
+      run: |
+        find ${{ inputs.modules-directory }} -mindepth 1 -maxdepth 1 -type d \
+          | while read dir; do
+              terraform-docs \
+                --config=${{ inputs.terraform-docs-config }} \
+                --output-check \
+                "$dir"
+            done
+
+    - name: TFLint
+      shell: bash
+      run: tflint --config=${{ inputs.tflint-config }} --recursive --format=compact
+
+    - name: Checkov
+      shell: bash
+      run: |
+        checkov \
+          -d ${{ inputs.working-directory }} \
+          --framework terraform \
+          --quiet \
+          --compact
+
+    - name: Trivy
+      shell: bash
+      run: trivy config ${{ inputs.working-directory }} --skip-dirs="**/.terraform"
+
+    - name: terraform_unit_tests
+      shell: bash
+      run: |
+        terraform -chdir=${{ inputs.working-directory }} init -backend=false
+        terraform -chdir=${{ inputs.working-directory }} test
