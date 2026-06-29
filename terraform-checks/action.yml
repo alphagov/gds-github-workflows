@@ -21,6 +21,10 @@ inputs:
     description: 'Path to terraform-docs config file'
     required: false
     default: '.terraform-docs.yml'
+  checkov-version:
+    description: Checkov version
+    required: false
+    default: latest
 
 runs:
   using: composite
@@ -28,56 +32,71 @@ runs:
     - name: Install terraform and dependencies
       uses: alphagov/gds-tech-and-security-github-actions/terraform/deps@b3feeff4a9b734aa33f2ef59c4cb1a82eb239937 # v0.1.19
       with:
-        terraform-version: ${{ inputs.terraform-version }}
+        terraform-version: "${{ inputs.terraform-version }}"
+        checkov-version: "${{ inputs.checkov-version }}"
 
     - name: Terraform fmt
       shell: bash
-      run: terraform fmt -recursive -check ${{ inputs.working-directory }}
+      run: terraform fmt -recursive -check "${{ inputs.working-directory }}"
 
     - name: Terraform init
       shell: bash
       run: |
-        terraform -chdir=${{ inputs.working-directory }} init \
+        terraform -chdir="${{ inputs.working-directory }}" init \
           -backend=false \
           -input=false
 
     - name: Terraform validate
       shell: bash
       run: |
-        terraform -chdir=${{ inputs.working-directory }} validate \
+        terraform -chdir="${{ inputs.working-directory }}" validate \
           -json \
           -no-color
 
     - name: Terraform docs
       shell: bash
       run: |
-        find ${{ inputs.modules-directory }} -mindepth 1 -maxdepth 1 -type d \
-          | while read dir; do
-              terraform-docs \
-                --config=${{ inputs.terraform-docs-config }} \
-                --output-check \
-                "$dir"
-            done
+        if [ ! -d "${{ inputs.modules-directory }}" ]; then
+          echo "Skipping terraform docs: modules-directory '${{ inputs.modules-directory }}' does not exist"
+          exit 0
+        fi
+        while IFS= read -r dir; do
+          terraform-docs \
+            --config=${{ inputs.terraform-docs-config }} \
+            --output-check \
+            "$dir"
+        done < <(find "${{ inputs.modules-directory }}" -mindepth 1 -maxdepth 1 -type d)
 
     - name: TFLint
       shell: bash
-      run: tflint --config=${{ inputs.tflint-config }} --recursive --format=compact
+      run: |
+        TF_FILES=$(find . -name "*.tf" -not -path "*/.terraform/*" -print -quit)
+
+        if [ -z "$TF_FILES" ]; then
+          echo "No Terraform configuration files found. Skipping TFLint evaluation safely."
+          exit 0
+        fi
+
+        echo "Initializing TFLint plugins..."
+        tflint --config="$GITHUB_WORKSPACE/${{ inputs.tflint-config }}" --init
+        echo "Running TFLint analysis..."
+        tflint --config="$GITHUB_WORKSPACE/${{ inputs.tflint-config }}" --recursive --format=compact
 
     - name: Checkov
       shell: bash
       run: |
         checkov \
-          -d ${{ inputs.working-directory }} \
+          -d "${{ inputs.working-directory }}" \
           --framework terraform \
           --quiet \
           --compact
 
     - name: Trivy
       shell: bash
-      run: trivy config ${{ inputs.working-directory }} --skip-dirs="**/.terraform"
+      run: trivy config "${{ inputs.working-directory }}" --skip-dirs="**/.terraform"
 
     - name: terraform_unit_tests
       shell: bash
       run: |
-        terraform -chdir=${{ inputs.working-directory }} init -backend=false
-        terraform -chdir=${{ inputs.working-directory }} test
+        terraform -chdir="${{ inputs.working-directory }}" init -backend=false
+        terraform -chdir="${{ inputs.working-directory }}" test

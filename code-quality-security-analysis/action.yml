@@ -1,0 +1,104 @@
+name: Code Quality & Security Analysis
+description: Run code linting checks - gitleaks, codespell, shellcheck, pymarkdown
+
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: false
+    type: string
+    default: '3.x'
+  pymarkdown-config:
+    description: 'Path to pymarkdown config for modules directory'
+    required: false
+    default: 'terraform/modules/.pymarkdown.yaml'
+  modules-directory:
+    description: 'Modules directory with separate pymarkdown config'
+    required: false
+    default: 'terraform/modules'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install tools
+      shell: bash
+      run: pip install -q codespell pymarkdownlnt
+
+    - name: Gitleaks
+      shell: bash
+      run: |
+        VERSION="8.30.0"
+        X64_SHA="79a3ab579b53f71efd634f3aaf7e04a0fa0cf206b7ed434638d1547a2470a66e"
+        ARM64_SHA="b4cbbb6ddf7d1b2a603088cd03a4e3f7ce48ee7fd449b51f7de6ee2906f5fa2f"
+
+        case "$(uname -m)" in
+          x86_64)        ARCH="x64";    EXPECTED_SHA="$X64_SHA" ;;
+          aarch64|arm64) ARCH="arm64";  EXPECTED_SHA="$ARM64_SHA" ;;
+          *) echo "Unsupported architecture: $(uname -m)"; exit 1 ;;
+        esac
+
+        curl -sSL -o /tmp/gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_${ARCH}.tar.gz"
+
+        echo "${EXPECTED_SHA}  /tmp/gitleaks.tar.gz" | sha256sum --check --status || {
+          echo "ERROR: Gitleaks binary checksum mismatch! Potential tampering detected."
+          exit 1
+        }
+
+        tar -xzf /tmp/gitleaks.tar.gz -C /tmp
+
+        rm /tmp/gitleaks.tar.gz
+
+        /tmp/gitleaks detect --verbose --source=.
+
+        rm /tmp/gitleaks
+    - name: Codespell
+      shell: bash
+      run: |
+        # --toml /dev/null overrides any .codespellrc in the consuming repo
+        # which may set write-changes = true (auto-fix mode).
+        # CI should always check-only, never auto-fix.
+        # Note: if your repo has skip patterns or custom dictionaries in .codespellrc
+        # move them to a [codespell] section in pyproject.toml which this does not override.
+
+        codespell \
+          --toml /dev/null \
+          --skip=".git,.terraform,*.tfstate,*.tfstate.backup"
+
+    - name: Shellcheck
+      shell: bash
+      run: find . -name "*.sh" -not -path "*/.terraform/*" | xargs -r shellcheck
+    - name: Pymarkdown (terraform modules)
+      shell: bash
+      run: |
+        MODULE_DIR="${{ inputs.modules-directory }}"
+        CONFIG_FILE="${{ inputs.pymarkdown-config }}"
+
+        # Quick check for markdown files
+        MD_COUNT=$(find "$MODULE_DIR" -name "*.md" | wc -l)
+
+        if [ "$MD_COUNT" -eq 0 ]; then
+          echo "No Markdown files found in '$MODULE_DIR'. Skipping pymarkdown."
+          exit 0
+        fi
+
+        echo "Found $MD_COUNT Markdown file(s) in $MODULE_DIR. Running pymarkdown..."
+
+        # Run the linter with full output capture
+        if ! pymarkdown \
+          --config "$CONFIG_FILE" \
+          --log-level INFO \
+          scan --recurse "$MODULE_DIR" 2>&1 | tee pymarkdown.log; then
+
+          echo "❌ Pymarkdown found linting issues!"
+          echo "=== Full Output ==="
+          cat pymarkdown.log
+          echo ""
+          echo "Fix the issues above or update terraform/modules/.pymarkdown.yaml"
+          exit 1
+        fi
+
+        echo "✅ Pymarkdown passed successfully."

@@ -1,4 +1,4 @@
-name: Code Format Checks
+name: Code Sanity Checks
 description: |
   Run file formatting and structure checks via pre-commit hooks.
   These hooks have no standalone CLI equivalent so pre-commit is used selectively.
@@ -26,7 +26,7 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
-    - name: Code format checks
+    - name: Code Sanity Checks
       shell: bash
       run: |
         echo "Install pre-commit"
@@ -36,9 +36,26 @@ runs:
         [ "$version" != "latest" ] && package_spec+="==$version"
 
         pip install -q "$package_spec"
-        pre-commit run \
-          --config .pre-commit-config.yaml \
-          check-added-large-files check-case-conflict check-json \
-          check-merge-conflict check-symlinks check-yaml end-of-file-fixer \
-          pretty-format-json trailing-whitespace check-shebang-scripts-are-executable \
-          --all-files
+
+        hooks=(
+          check-added-large-files
+          check-case-conflict
+          check-json
+          check-merge-conflict
+          check-symlinks
+          check-yaml
+          end-of-file-fixer
+          pretty-format-json
+          trailing-whitespace
+          check-shebang-scripts-are-executable
+        )
+
+        # Loop through and run each hook against all files
+        for hook in "${hooks[@]}"; do
+          echo "Running hook: $hook"
+          if ! pre-commit run "$hook" --config .pre-commit-config.yaml --all-files; then
+            echo "❌ Hook $hook failed! Displaying modified file changes below:"
+            git diff
+            exit 1
+          fi
+        done
