@@ -59,6 +59,7 @@ git push origin terraform-azurerm-another-module/v2.1.0
 ```
 
 This creates GitHub releases with titles like:
+
 - `azurerm-conditional-access v1.0.0`
 - `terraform-azurerm-another-module v2.1.0`
 

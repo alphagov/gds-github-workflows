@@ -12,7 +12,7 @@ Reusable elements and their docs:
   - [terraform/deps](terraform/deps/README.md) - installs binaries including Terraform and related ones needed for "terraform validation" (Composite Action)
   - [pre-commit](pre-commit/action.yml) - runs pre-commit (Composite Action)
 - [Terraform Module Release](./docs/terraform-module-release.md) - Release and publish Terraform modules (Reusable Workflow)
-- [Dispatcher](./dispatcher/README.md) - Invokes a workflow in another repo - an implemention of the Dispatch -> Receiver pattern (Composite Action)
+- [Dispatcher](./dispatcher/README.md) - Invokes a workflow in another repo - an implemmention of the Dispatch -> Receiver pattern (Composite Action)
 - [Comment-PR](./comment-pr/README.md) - Adds a comment to a pull request in another repo (typically used by the workflow that was triggered by the Dispatcher to report results back to the original PR) (Composite Action)
 - [Update-check](./update-check/README.md) - Updates a Pull Request 'Check' result (green tick or red cross) on another repo (typically used by the workflow that was triggered by the Dispatcher to report results back to the original PR) (Composite Action)
 

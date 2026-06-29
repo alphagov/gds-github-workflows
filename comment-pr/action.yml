@@ -28,7 +28,7 @@ runs:
       run: |
         set -e
 
-        # JSON payload with coment content
+        # JSON payload with comment content
         jq -n \
           --arg title "$COMMENT_TITLE" \
           --arg content "$COMMENT_BODY" \
