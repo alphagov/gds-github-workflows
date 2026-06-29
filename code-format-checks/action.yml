@@ -1,0 +1,44 @@
+name: Code Format Checks
+description: |
+  Run file formatting and structure checks via pre-commit hooks.
+  These hooks have no standalone CLI equivalent so pre-commit is used selectively.
+
+  This action is intentionally separate so it can be dropped or replaced independently.
+  Maybe running these locally is enough
+
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: false
+    type: string
+    default: '3.x'
+  pre-commit-version:
+    description: 'Pre-commit version to use'
+    required: false
+    type: string
+    default: 'latest'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Code format checks
+      shell: bash
+      run: |
+        echo "Install pre-commit"
+        package_spec="pre-commit"
+
+        version="${{ inputs.pre-commit-version || 'latest' }}"
+        [ "$version" != "latest" ] && package_spec+="==$version"
+
+        pip install -q "$package_spec"
+        pre-commit run \
+          --config .pre-commit-config.yaml \
+          check-added-large-files check-case-conflict check-json \
+          check-merge-conflict check-symlinks check-yaml end-of-file-fixer \
+          pretty-format-json trailing-whitespace check-shebang-scripts-are-executable \
+          --all-files
