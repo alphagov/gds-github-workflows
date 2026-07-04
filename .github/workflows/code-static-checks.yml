@@ -9,53 +9,6 @@ on:
     branches:
       - main
       - EEF-35
-  workflow_call:
-    inputs:
-      terraform-version:
-        description: 'Terraform version to use'
-        required: false
-        type: string
-        default: 'latest'
-      pre-commit-version:
-        description: 'Pre-commit version to use'
-        required: false
-        type: string
-        default: 'latest'
-      checkov-version:
-        description: 'Checkov version to use'
-        required: false
-        type: string
-        default: 'latest'
-      working-directory:
-        description: 'Terraform root directory'
-        required: false
-        type: string
-        default: 'terraform'
-      modules-directory:
-        description: 'Terraform modules directory for docs generation'
-        required: false
-        type: string
-        default: 'terraform/modules'
-      tflint-config:
-        description: 'Path to tflint config file'
-        required: false
-        type: string
-        default: '.tflint.hcl'
-      terraform-docs-config:
-        description: 'Path to terraform-docs config file'
-        required: false
-        type: string
-        default: '.terraform-docs.yml'
-      pymarkdown-config:
-        description: 'Path to pymarkdown config file'
-        required: false
-        type: string
-        default: '.pymarkdown.yaml'
-      runs-on:
-        description: 'Runner to use for jobs'
-        required: false
-        type: string
-        default: 'ubuntu-latest'
 
 permissions:
   contents: none
@@ -66,7 +19,7 @@ jobs:
   terraform-checks:
     permissions:
       contents: read
-    runs-on: ${{ inputs.runs-on || 'ubuntu-latest' }}
+    runs-on: 'ubuntu-latest'
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -74,17 +27,17 @@ jobs:
       - name: Run terraform checks
         uses: alphagov/gds-tech-and-security-github-actions/terraform-checks@9880d8986f60a509d41ca606a9d2af12cc33b643 # EEF-35
         with:
-          checkov-version: ${{ inputs.checkov-version || 'latest' }}
-          terraform-version: ${{ inputs.terraform-version || 'latest' }}
-          working-directory: ${{ inputs.working-directory || 'terraform' }}
-          modules-directory: ${{ inputs.modules-directory || 'terraform/modules' }}
-          tflint-config: ${{ inputs.tflint-config || '.tflint.hcl' }}
-          terraform-docs-config: ${{ inputs.terraform-docs-config || '.terraform-docs.yml' }}
+          checkov-version: 'latest'
+          terraform-version: 'latest'
+          working-directory: 'terraform'
+          modules-directory: 'terraform/modules'
+          tflint-config: '.tflint.hcl'
+          terraform-docs-config: '.terraform-docs.yml'
 
   code-quality-security-analysis:
     permissions:
       contents: read
-    runs-on: ${{ inputs.runs-on || 'ubuntu-latest' }}
+    runs-on: 'ubuntu-latest'
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -95,7 +48,7 @@ jobs:
   code-sanity-checks:
     permissions:
       contents: read
-    runs-on: ${{ inputs.runs-on || 'ubuntu-latest' }}
+    runs-on: 'ubuntu-latest'
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -103,4 +56,4 @@ jobs:
       - name: Run code format checks
         uses: alphagov/gds-tech-and-security-github-actions/code-sanity-checks@9880d8986f60a509d41ca606a9d2af12cc33b643 # EEF-35
         with:
-          pre-commit-version: ${{ inputs.pre-commit-version || 'latest' }}
+          pre-commit-version: 'latest'
