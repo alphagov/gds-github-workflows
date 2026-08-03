@@ -10,9 +10,6 @@ inputs:
   action_type:
     description: 'The PR state (opened, sync, or closed).'
     required: true
-  is_merged:
-    description: 'If the PR is merged `true` otherwise `false`.'
-    required: true
   pr_number:
     description: 'The originating Pull Request ID.'
     required: true
@@ -24,6 +21,9 @@ inputs:
     required: true
   pull_request_sha:
     description: 'The Pull Requests SHA value.'
+    required: true
+  merge_commit_sha:
+    description: 'The merge commit SHA of the Pull Request.'
     required: true
   source_repository:
     description: 'The source repository that initiated the Pull Request.'
@@ -43,13 +43,13 @@ runs:
           "event_type": "receiver-trigger",
           "client_payload": {
             "action_type": "${{ inputs.action_type }}",
-            "is_merged": "${{ inputs.is_merged }}",
             "changed_files": "${{ inputs.changed_files }}",
             "pr_number": "${{ inputs.pr_number }}",
             "correlation_id": "${{ inputs.correlation_id }}",
             "ref_name": "${{ inputs.ref_name }}",
             "pull_request_sha": "${{ inputs.pull_request_sha }}",
-            "source_repository": "${{ inputs.source_repository }}"
+            "merge_commit_sha": "${{ inputs.merge_commit_sha }}",
+            "source_repository": "${{ inputs.source_repository }}",
           }
         }
         EOF
