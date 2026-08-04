@@ -49,7 +49,7 @@ runs:
             "ref_name": "${{ inputs.ref_name }}",
             "pull_request_sha": "${{ inputs.pull_request_sha }}",
             "merge_commit_sha": "${{ inputs.merge_commit_sha }}",
-            "source_repository": "${{ inputs.source_repository }}",
+            "source_repository": "${{ inputs.source_repository }}"
           }
         }
         EOF
