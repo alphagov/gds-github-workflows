@@ -2,9 +2,10 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
-    directory:
-      - /
-      - /terraform/deps/*
+    directories:
+      - "/"              # Catches .github/workflows and root action.yml
+      - "/*"             # Catches /comment-pr, /dispatcher, /pre-commit, /update-check
+      - "/terraform/*"   # Catches /terraform/deps
     schedule:
       interval: "weekly"
     ignore:
