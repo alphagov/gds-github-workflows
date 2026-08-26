@@ -1,16 +1,40 @@
 ---
 version: 2
 updates:
+  # Scans .github/workflows/ and root
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     ignore:
-      - dependency-name: "aquasecurity/setup-trivy" # temporary ignore
+      - dependency-name: "aquasecurity/setup-trivy"
 
+  # Scans /comment-pr/action.yml
   - package-ecosystem: "github-actions"
-    directory: "/terraform/deps" 
+    directory: "/comment-pr"
     schedule:
       interval: "weekly"
-    ignore:
-      - dependency-name: "aquasecurity/setup-trivy" # temporary ignore
+
+  # Scans /dispatcher/action.yml
+  - package-ecosystem: "github-actions"
+    directory: "/dispatcher"
+    schedule:
+      interval: "weekly"
+
+  # Scans /pre-commit/action.yml
+  - package-ecosystem: "github-actions"
+    directory: "/pre-commit"
+    schedule:
+      interval: "weekly"
+
+  # Scans /terraform/deps/action.yml
+  - package-ecosystem: "github-actions"
+    directory: "/terraform/deps"
+    schedule:
+      interval: "weekly"
+
+  # Scans /update-check/action.yml
+  - package-ecosystem: "github-actions"
+    directory: "/update-check"
+    schedule:
+      interval: "weekly"
