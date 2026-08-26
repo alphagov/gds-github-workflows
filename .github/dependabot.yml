@@ -2,9 +2,14 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
-    directory:
-      - /
-      - /terraform/deps/*
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "aquasecurity/setup-trivy" # temporary ignore
+
+  - package-ecosystem: "github-actions"
+    directory: "/terraform/deps" 
     schedule:
       interval: "weekly"
     ignore:
